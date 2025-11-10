@@ -1,6 +1,6 @@
 import numpy as np
 
-def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> float:
+def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     """
     Parameters
     ----------
@@ -13,12 +13,12 @@ def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> float:
 
     Returns
     -------
-    float 
+    int 
         The result of the objective function
     """
 
     f = np.linalg.norm(X-W@H,'fro')**2 # ou alors, sans NumPy : f = sum(sum((X-W@H)**2))
-    return float(f)
+    return int(f)
 
 
 def solutionIsFeasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
@@ -57,7 +57,57 @@ def solutionIsFeasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH:
         return False
     return bool(np.all((W >= LW) & (W <= UW)) and np.all((H >= LH) & (H <= UH)))
 
-def localSearch(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> float:
+def parseInput(path: str):
+    """
+    Parse the given input
+
+    Parameters
+    ----------
+    path : str 
+        The input file path
+
+    Returns
+    -------
+    X : np.matrix
+        The matrix to estimate
+    r : int
+        X's rank
+    LW : int 
+        The lowest possible W element
+    UW : int 
+        The highest possible W element
+    LH : int 
+        The lowest possible H element
+    UH : int 
+        The highest possible H element
+    """
+    with open(path, 'r') as file:
+        lines = file.readlines()
+        _, _, r, LW, UW, LH, UH = map(int, lines[0].split())
+        X = np.array(map(int, lines[1:]), dtype=int)
+    return X, r, LW, UW, LH, UH
+
+def generateOutput(obj: int, W: np.matrix, H: np.matrix, path: str):
+    """
+    Generate the ouptut file
+
+    Parameters
+    ----------
+    obj: int
+        The found solution's value
+    W : np.matrix 
+        The W matrix solution
+    H : np.matrix 
+        The H matrix solution
+    path: str
+        The location to generate the output file
+    """
+
+    with open(path, "w") as file:
+        pass # TODO
+    
+
+def localSearch(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> int:
     """
     Local Search
 
@@ -82,7 +132,7 @@ def localSearch(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: i
 
     Returns
     -------
-    float 
+    int 
         The result of a local search using 
         the given parameters
     """
