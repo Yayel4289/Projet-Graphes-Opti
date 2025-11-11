@@ -60,7 +60,7 @@ def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, L
     return bool(np.all((W >= LW) & (W <= UW)) and np.all((H >= LH) & (H <= UH)))
 
 
-def parse_input(path: str):
+def parse_input(path: str) -> tuple[np.matrix, int, int, int, int, int]:
     """
     Parse the given input
 
@@ -87,7 +87,11 @@ def parse_input(path: str):
     with open(path, 'r') as file:
         lines = file.readlines()
         _, _, r, LW, UW, LH, UH = map(int, lines[0].split())
-        X = np.array(map(int, lines[1:]), dtype=int)
+        X = np.matrix(
+            [ list(map(int, line.split())) for line in lines[1:] ], 
+            dtype=int
+        )
+
     return X, r, LW, UW, LH, UH
 
 
@@ -133,65 +137,6 @@ def generate_output(obj: int, W: np.matrix, H: np.matrix, path: str):
         file.write(s)
     
 
-def local_search(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> int:
-    """
-    Local Search
-
-    Parameters
-    ----------
-    X : np.matrix
-        The matrix to estimate
-    W : np.matrix
-        The multiplicand
-    H : np.matrix
-        The multiplier
-    r : int
-        X's rank
-    LW : int 
-        The lowest possible W element
-    UW : int 
-        The highest possible W element
-    LH : int 
-        The lowest possible H element
-    UH : int 
-        The highest possible H element
-
-    Returns
-    -------
-    int 
-        The result of a local search using 
-        the given parameters
-    """
-
-    min_fobj = fobj(X, W, H)
-    W_min, H_min = W.copy(), H.copy()
-    last_min = min_fobj
-    for i in range(W.shape[0]):
-        for j in range(r):
-            for w in range(LW, UW + 1):
-                base_w = W[i][j]
-                W[i][j] = w
-                neighbor_fobj = fobj(X, W, H)
-                if neighbor_fobj < min_fobj:
-                    min_fobj = neighbor_fobj
-                    W_min = W.copy()
-                W[i][j] = base_w 
-
-    for i in range(r):
-        for j in range(H.shape[1]):
-            for h in range(LH, UH + 1):
-                base_h = H[i][j]
-                H[i][j] = h
-                neighbor_fobj = fobj(X, W, H)
-                if neighbor_fobj < min_fobj:
-                    min_fobj = neighbor_fobj
-                    H_min = H.copy()
-                H[i][j] = base_h
-    return \
-        local_search(X, W_min, H_min, r, LW, UW, LH, UH) if last_min != min_fobj else \
-        min_fobj
-
-
 """
 def metaheuristic(X,r,LW,UW,LH,UH):
     bestW = np.zeros((X.shape[0],r))
@@ -201,3 +146,4 @@ def metaheuristic(X,r,LW,UW,LH,UH):
 
     return bestW, bestH
 """
+
