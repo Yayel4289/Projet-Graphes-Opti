@@ -1,4 +1,6 @@
 import numpy as np
+import re
+
 
 def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     """
@@ -21,7 +23,7 @@ def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     return int(f)
 
 
-def solutionIsFeasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
+def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
     """
     Test whether the given solution is feasible or not
 
@@ -57,7 +59,8 @@ def solutionIsFeasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH:
         return False
     return bool(np.all((W >= LW) & (W <= UW)) and np.all((H >= LH) & (H <= UH)))
 
-def parseInput(path: str):
+
+def parse_input(path: str):
     """
     Parse the given input
 
@@ -87,7 +90,29 @@ def parseInput(path: str):
         X = np.array(map(int, lines[1:]), dtype=int)
     return X, r, LW, UW, LH, UH
 
-def generateOutput(obj: int, W: np.matrix, H: np.matrix, path: str):
+
+def get_matrix_str_output(M: np.matrix) -> str:
+    """
+    Returns a matrix M to the asked output format : 
+        [[1 2]      1 2
+         [3 4]  ->  3 4
+         [5 6]]     5 6
+
+    Parameters
+    ----------
+    M : np.matrix
+        The matrix to output
+
+    Returns 
+    -------
+    str 
+        The matrix M in the asked output format
+    """
+
+    return re.sub(r" \[|\[|\]", '', str(M))
+
+
+def generate_output(obj: int, W: np.matrix, H: np.matrix, path: str):
     """
     Generate the ouptut file
 
@@ -103,11 +128,12 @@ def generateOutput(obj: int, W: np.matrix, H: np.matrix, path: str):
         The location to generate the output file
     """
 
+    s = f"{obj}\n{get_matrix_str_output(W)}\n{get_matrix_str_output(H)}"
     with open(path, "w") as file:
-        pass # TODO
+        file.write(s)
     
 
-def localSearch(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> int:
+def local_search(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> int:
     """
     Local Search
 
@@ -143,33 +169,35 @@ def localSearch(X: np.matrix, W: np.matrix, H: np.matrix, r: int, LW: int, UW: i
     for i in range(W.shape[0]):
         for j in range(r):
             for w in range(LW, UW + 1):
-                W_copy = W.copy()
-                W_copy[i][j] = w
-                neighbor_fobj = fobj(X, W_copy, H)
+                base_w = W[i][j]
+                W[i][j] = w
+                neighbor_fobj = fobj(X, W, H)
                 if neighbor_fobj < min_fobj:
                     min_fobj = neighbor_fobj
-                    W_min = W_copy
+                    W_min = W.copy()
+                W[i][j] = base_w 
 
     for i in range(r):
         for j in range(H.shape[1]):
             for h in range(LH, UH + 1):
-                H_copy = H.copy()
-                H_copy[i][j] = h
-                neighbor_fobj = fobj(X, W, H_copy)
+                base_h = H[i][j]
+                H[i][j] = h
+                neighbor_fobj = fobj(X, W, H)
                 if neighbor_fobj < min_fobj:
                     min_fobj = neighbor_fobj
-                    H_min = H_copy
+                    H_min = H.copy()
+                H[i][j] = base_h
     return \
-        localSearch(X, W_min, H_min, r, LW, UW, LH, UH) if last_min != min_fobj else \
+        local_search(X, W_min, H_min, r, LW, UW, LH, UH) if last_min != min_fobj else \
         min_fobj
 
 
 """
 def metaheuristic(X,r,LW,UW,LH,UH):
-  bestW = np.zeros((X.shape[0],r))
-  bestH = np.zeros((r,X.shape[1]))
+    bestW = np.zeros((X.shape[0],r))
+    bestH = np.zeros((r,X.shape[1]))
 
-  ... #votre méthode
+    # ...
 
-  return bestW, bestH
+    return bestW, bestH
 """
