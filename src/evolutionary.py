@@ -1,6 +1,8 @@
 import numpy as np 
-import utils
+from utils import *
 from random import randint, random
+from functools import total_ordering
+import os
 
 MAX_GENERATION = 1000
 N_POP = 1000 
@@ -13,6 +15,7 @@ UW: int
 LH: int
 UH: int
 
+@total_ordering
 class Individual:
     def __init__(self, W: np.matrix, H: np.matrix) -> None:
         self.W = W 
@@ -20,8 +23,11 @@ class Individual:
         self.possible_mutate()
         self.fitness = self.compute_fitness()
 
+    def __lt__(self, other: "Individual") -> bool: # sort ability
+        return self.fitness < other.fitness
+
     def compute_fitness(self) -> int:
-        return utils.fobj(X, self.W, self.H)
+        return fobj(X, self.W, self.H)
 
     def mutate(self) -> None: 
         # Neighborhood -> complete enum (can change)
@@ -49,4 +55,70 @@ class Individual:
             j = randint(0, M.shape[1] - 1)
             M[i, j] = other_M[i, j]
         return Individual(new_W, new_H)
+
+
+class Population:
+    def __init__(self) -> None:
+        self.population: list["Individual"] = [
+            Individual(
+                np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r))), # W
+                np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))  # H
+            ) for _ in range(N_POP)
+        ]
+        self.sort()
+        self.min = self[0]
+
+    def __getitem__(self, i) -> "Individual":
+        return self.population.__getitem__(i)
+        
+    def __len__(self) -> int:
+        return self.population.__len__()
+
+    def add(self, ind: "Individual") -> None:
+        self.population.append(ind)
+
+    def sort(self) -> None:
+        # better fitness first
+        self.population.sort(reverse=True) 
+
+    def make_reproduction(self) -> None:
+        # can change
+        for i in range(0, len(self), 2):
+            child = self[i].reproduce(self[i + 1])
+            self.add(child) 
+        self.sort()
+        self.min = min(self.min, self[0])
+
+    def select(self) -> None: 
+        # naive selection
+        self.population = self.population[:N_POP]
+
+    def generate(self):
+        self.make_reproduction()
+        self.select()
+
+    def evolve(self):
+        for _ in range(MAX_GENERATION):
+            self.generate()
+
+if __name__ == "__main__":
+    TEST_PATH = "../tests/testMatrices/"
+    TRAINING_PATH = "../tests/trainingMatrices/"
+    RESULT_PATH = "../tests/evolutionaryResults/"
+
+    test = os.listdir(TEST_PATH)
+    training = os.listdir(TRAINING_PATH)
+
+    for i, file in enumerate(test + training):
+        if "houdain" in file:
+            continue
+        print(file)
+        path = TEST_PATH if i < len(test) else TRAINING_PATH
+        X, r, LW, UW, LH, UH = parse_input(path + file)
+        W = np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r)))
+        H = np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))
+        pop = Population()
+        pop.evolve()
+        best = pop.min
+        generate_output(best.fitness, best.W, best.H, RESULT_PATH + file)
 
