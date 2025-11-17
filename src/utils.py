@@ -1,5 +1,6 @@
 import numpy as np
-import re
+import re 
+from math import ceil
 
 
 def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
@@ -20,7 +21,7 @@ def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     """
 
     f = np.linalg.norm(X-W@H,'fro')**2 # ou alors, sans NumPy : f = sum(sum((X-W@H)**2))
-    return int(f)
+    return ceil(f)
 
 
 def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
