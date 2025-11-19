@@ -10,19 +10,19 @@ class Population:
         UW: int,
         LH: int,
         UH: int,
-        N_POP: int,
-        MAX_GENERATION: int,
+        N_POPULATION: int,
+        N_GENERATION: int,
         MUTATION_CHANCE: float
     ) -> None:
 
-        self.N_POP = N_POP
-        self.MAX_GENERATION = MAX_GENERATION
+        self.N_POPULATION = N_POPULATION
+        self.N_GENERATION = N_GENERATION
         Individual.init_class(X, r, LW, UW, LH, UH, MUTATION_CHANCE)
         self.population: list["Individual"] = [
             Individual(
                 np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r))), # W
                 np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))  # H
-            ) for _ in range(self.N_POP)
+            ) for _ in range(self.N_POPULATION)
         ]
         self.sort()
         self.min = self[0]
@@ -51,14 +51,14 @@ class Population:
 
     def select(self) -> None: 
         # naive selection
-        self.population = self.population[:self.N_POP]
+        self.population = self.population[:self.N_POPULATION]
 
     def generate(self):
         self.make_reproduction()
         self.select()
 
     def evolve(self):
-        for _ in range(self.MAX_GENERATION):
+        for _ in range(self.N_GENERATION):
             self.generate()
 
 
