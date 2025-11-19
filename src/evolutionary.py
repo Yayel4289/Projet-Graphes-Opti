@@ -21,12 +21,12 @@ class Individual:
         self.W = W 
         self.H = H 
         self.possible_mutate()
-        self.fitness = self.compute_fitness()
+        self.cost = self.compute_cost()
 
     def __lt__(self, other: "Individual") -> bool: # sort ability
-        return self.fitness < other.fitness
+        return self.cost < other.cost
 
-    def compute_fitness(self) -> int:
+    def compute_cost(self) -> int:
         return fobj(X, self.W, self.H)
 
     def mutate(self) -> None: 
@@ -78,8 +78,8 @@ class Population:
         self.population.append(ind)
 
     def sort(self) -> None:
-        # better fitness first
-        self.population.sort(reverse=True) 
+        # low cost first
+        self.population.sort() 
 
     def make_reproduction(self) -> None:
         # can change
@@ -87,6 +87,7 @@ class Population:
             child = self[i].reproduce(self[i + 1])
             self.add(child) 
         self.sort()
+        print(self.min.cost, self[0].cost)
         self.min = min(self.min, self[0])
 
     def select(self) -> None: 
@@ -120,5 +121,5 @@ if __name__ == "__main__":
         pop = Population()
         pop.evolve()
         best = pop.min
-        generate_output(best.fitness, best.W, best.H, RESULT_PATH + file)
+        generate_output(best.cost, best.W, best.H, RESULT_PATH + file)
 
