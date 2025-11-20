@@ -12,7 +12,10 @@ class Individual:
     LH: int
     UH: int
 
-    MUTATION_CHANCE: float
+    BETA: float
+
+    MIN_K: int 
+    MAX_K: int
 
     @classmethod
     def init_class(
@@ -23,7 +26,7 @@ class Individual:
         UW: int,
         LH: int,
         UH: int,
-        MUTATION_CHANCE: float
+        BETA: float
     ) -> None:
         cls.X = X 
         cls.r = r 
@@ -31,7 +34,9 @@ class Individual:
         cls.UW = UW 
         cls.LH = LH 
         cls.UH = UH 
-        cls.MUTATION_CHANCE = MUTATION_CHANCE
+        cls.BETA = BETA
+        cls.MAX_K = cls.r * 2
+        cls.MIN_K = cls.r // 2
 
 
     def __init__(self, W: np.matrix, H: np.matrix) -> None:
@@ -57,14 +62,12 @@ class Individual:
         M[i, j] = randint(LB, HB)
 
     def possible_mutate(self):
-        if random() < self.cls.MUTATION_CHANCE : self.mutate()
+        if random() < self.cls.BETA : self.mutate()
     
     def reproduce(self, other: "Individual") -> "Individual":
         # "Matrix k swap crossover" (can change)
-        MAX_K = 2*self.cls.r
-        MIN_K = self.cls.r // 2
         new_W, new_H = self.W.copy(), self.H.copy()
-        k = randint(MIN_K, MAX_K)
+        k = randint(self.cls.MIN_K, self.cls.MAX_K)
         for _ in range(k):
             in_W = randint(0, 1)
             M = new_W if in_W else new_H

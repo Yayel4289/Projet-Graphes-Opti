@@ -6,9 +6,10 @@ import os
 
 if __name__ == "__main__":
     # hyperparams
-    N_GENERATION = 1000
-    N_POPULATION = 1000 
-    MUTATION_CHANCE = 0.2
+    TIME_SEC = 20 # time in sec for each file
+    N_POPULATION = 1000
+    ALPHA = 0.7 # reproduction chance
+    BETA = 0.2 # mutation chance
 
     # paths
     TEST_PATH = "../tests/testMatrices/"
@@ -29,7 +30,7 @@ if __name__ == "__main__":
         H = np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))
         population = Population(
            X, r, LW, UW, LH, UH,
-           N_POPULATION, N_GENERATION, MUTATION_CHANCE
+           N_POPULATION, TIME_SEC, ALPHA, BETA
         )
         population.evolve()
 
