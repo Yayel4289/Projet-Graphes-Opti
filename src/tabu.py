@@ -101,24 +101,36 @@ def tabu_search(
                 dot_rh = np.dot(r_row, h_row)
                 h_norm2 = H_norm2[k]
 
-                for delta in (-1, 1):
-                    new_val = current_W[i, k] + delta
+                # Test delta = +1
+                best_local_obj = None
+                best_local_delta = None
 
-                    if new_val < LW or new_val > UW:
-                        continue
+                # delta = +1
+                if current_W[i, k] < UW:
+                    obj_plus = current_obj - 2 * (+1) * dot_rh + h_norm2
+                    best_local_obj = obj_plus
+                    best_local_delta = +1
 
-                    is_tabu = tabu_W[i, k] > 0
+                # delta = -1
+                if current_W[i, k] > LW:
+                    obj_minus = current_obj - 2 * (-1) * dot_rh + h_norm2
+                    if (best_local_obj is None) or (obj_minus < best_local_obj):
+                        best_local_obj = obj_minus
+                        best_local_delta = -1
 
-                    neighbor_obj = current_obj - 2 * delta * dot_rh + h_norm2
-                    neighbor_obj = int(neighbor_obj)
+                # Si aucun delta possible, passer
+                if best_local_delta is None:
+                    continue
 
-                    # Aspiration : on n'autorise un move tabou que s'il améliore best_obj
-                    if is_tabu and neighbor_obj >= best_obj:
-                        continue
+                # Vérif tabou + aspiration
+                is_tabu = tabu_W[i, k] > 0
+                if is_tabu and best_local_obj >= best_obj:
+                    continue
 
-                    if (best_neighbor_obj is None) or (neighbor_obj < best_neighbor_obj):
-                        best_neighbor_obj = neighbor_obj
-                        best_move = ("W", i, k, delta)
+                # Mise à jour du meilleur voisin global
+                if (best_neighbor_obj is None) or (best_local_obj < best_neighbor_obj):
+                    best_neighbor_obj = best_local_obj
+                    best_move = ("W", i, k, best_local_delta)
 
         # ==========================================
         # 2) Génération des voisins via H
@@ -130,24 +142,32 @@ def tabu_search(
                 dot_rw = np.dot(r_col, w_col)
                 w_norm2 = W_norm2[k]
 
-                for delta in (-1, 1):
-                    new_val = current_H[k, j] + delta
+                best_local_obj = None
+                best_local_delta = None
 
-                    if new_val < LH or new_val > UH:
-                        continue
+                # delta = +1
+                if current_H[k, j] < UH:
+                    obj_plus = current_obj - 2 * (+1) * dot_rw + w_norm2
+                    best_local_obj = obj_plus
+                    best_local_delta = +1
 
-                    is_tabu = tabu_H[k, j] > 0
+                # delta = -1
+                if current_H[k, j] > LH:
+                    obj_minus = current_obj - 2 * (-1) * dot_rw + w_norm2
+                    if (best_local_obj is None) or (obj_minus < best_local_obj):
+                        best_local_obj = obj_minus
+                        best_local_delta = -1
 
-                    neighbor_obj = current_obj - 2 * delta * dot_rw + w_norm2
-                    neighbor_obj = int(neighbor_obj)
+                if best_local_delta is None:
+                    continue
 
-                    # Aspiration
-                    if is_tabu and neighbor_obj >= best_obj:
-                        continue
+                is_tabu = tabu_H[k, j] > 0
+                if is_tabu and best_local_obj >= best_obj:
+                    continue
 
-                    if (best_neighbor_obj is None) or (neighbor_obj < best_neighbor_obj):
-                        best_neighbor_obj = neighbor_obj
-                        best_move = ("H", k, j, delta)
+                if (best_neighbor_obj is None) or (best_local_obj < best_neighbor_obj):
+                    best_neighbor_obj = best_local_obj
+                    best_move = ("H", k, j, best_local_delta)
 
         # Si aucun mouvement admissible, fin
         if best_move is None:
