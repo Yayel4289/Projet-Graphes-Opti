@@ -88,20 +88,35 @@ def tabu_search(
         H_norm2 = np.sum(np.asarray(current_H) ** 2, axis=1)  # shape (r,)
         W_norm2 = np.sum(np.asarray(current_W) ** 2, axis=0)  # shape (r,)
 
+        # --- Voisinage restreint : on ne parcourt qu'un sous-ensemble de lignes/colonnes ---
+        MAX_ROWS_W = 100   # à ajuster si tu veux
+        MAX_COLS_H = 100
+
+        rows_W_to_scan = np.random.choice(
+            n_rows_W,
+            size=min(MAX_ROWS_W, n_rows_W),
+            replace=False
+        )
+        cols_H_to_scan = np.random.choice(
+            n_cols_H,
+            size=min(MAX_COLS_H, n_cols_H),
+            replace=False
+        )
+
         best_neighbor_obj = None
         best_move = None  # ("W" ou "H", i/k, j, delta)
 
         # ==========================================
         # 1) Génération des voisins via W
         # ==========================================
-        for i in range(n_rows_W):
+        for i in rows_W_to_scan:
             r_row = np.asarray(R[i, :]).ravel()  # calculé 1 fois pour i
             for k in range(r):
                 h_row = np.asarray(current_H[k, :]).ravel()  # 1 fois pour (i, k)
                 dot_rh = np.dot(r_row, h_row)
                 h_norm2 = H_norm2[k]
 
-                # Test delta = +1
+                # Test du meilleur delta local (+1 ou -1)
                 best_local_obj = None
                 best_local_delta = None
 
@@ -135,7 +150,7 @@ def tabu_search(
         # ==========================================
         # 2) Génération des voisins via H
         # ==========================================
-        for j in range(n_cols_H):
+        for j in cols_H_to_scan:
             r_col = np.asarray(R[:, j]).ravel()  # calculé 1 fois pour j
             for k in range(n_rows_H):
                 w_col = np.asarray(current_W[:, k]).ravel()  # 1 fois pour (k, j)
