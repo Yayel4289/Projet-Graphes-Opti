@@ -5,7 +5,6 @@ import cProfile, pstats, io
 import time
 
 
-
 def tabu_search(
     X: np.matrix,
     W: np.matrix,
@@ -17,7 +16,7 @@ def tabu_search(
     UH: int,
     max_no_improv: int,
     tabu_tenure: int,
-        debug=False
+    debug: bool = False
 ) -> tuple[int, np.matrix, np.matrix]:
     """
     Tabu Search
@@ -61,7 +60,7 @@ def tabu_search(
 
     # Résidu R = X - W H et valeur objective courante ||R||_F^2
     R = X - current_W @ current_H
-    current_obj = int(np.linalg.norm(R, 'fro')**2)
+    current_obj = int(np.linalg.norm(R, "fro") ** 2)
 
     # ----- Meilleure solution globale -----
     best_W = current_W.copy()
@@ -72,9 +71,9 @@ def tabu_search(
     tabu_W = np.zeros(current_W.shape, dtype=int)
     tabu_H = np.zeros(current_H.shape, dtype=int)
 
-    no_improv = 0           # compteur d'itérations sans amélioration
+    no_improv = 0  # compteur d'itérations sans amélioration
     n_rows_W, _ = current_W.shape
-    n_rows_H, n_cols_H = current_H.shape   # H est r x n
+    n_rows_H, n_cols_H = current_H.shape  # H est r x n
 
     # ============================
     #     BOUCLE PRINCIPALE
@@ -83,6 +82,12 @@ def tabu_search(
         if debug:
             t0 = time.perf_counter()
 
+        # --- Pré-calcul des normes L2 des lignes de H et colonnes de W ---
+        # H_norm2[k] = || H[k, :] ||^2
+        # W_norm2[k] = || W[:, k] ||^2
+        H_norm2 = np.sum(np.asarray(current_H) ** 2, axis=1)  # shape (r,)
+        W_norm2 = np.sum(np.asarray(current_W) ** 2, axis=0)  # shape (r,)
+
         best_neighbor_obj = None
         best_move = None  # ("W" ou "H", i/k, j, delta)
 
@@ -90,14 +95,13 @@ def tabu_search(
         # 1) Génération des voisins via W
         # ==========================================
         for i in range(n_rows_W):
-            r_row = np.asarray(R[i, :]).ravel()  # ← calculé 1 fois pour i
+            r_row = np.asarray(R[i, :]).ravel()  # calculé 1 fois pour i
             for k in range(r):
-                h_row = np.asarray(current_H[k, :]).ravel()  # ← calculé 1 fois pour (i,k)
+                h_row = np.asarray(current_H[k, :]).ravel()  # 1 fois pour (i, k)
                 dot_rh = np.dot(r_row, h_row)
-                h_norm2 = np.dot(h_row, h_row)
+                h_norm2 = H_norm2[k]
 
                 for delta in (-1, 1):
-
                     new_val = current_W[i, k] + delta
 
                     if new_val < LW or new_val > UW:
@@ -108,6 +112,7 @@ def tabu_search(
                     neighbor_obj = current_obj - 2 * delta * dot_rh + h_norm2
                     neighbor_obj = int(neighbor_obj)
 
+                    # Aspiration : on n'autorise un move tabou que s'il améliore best_obj
                     if is_tabu and neighbor_obj >= best_obj:
                         continue
 
@@ -119,14 +124,13 @@ def tabu_search(
         # 2) Génération des voisins via H
         # ==========================================
         for j in range(n_cols_H):
-            r_col = np.asarray(R[:, j]).ravel()  # ← calculé 1 fois pour j
+            r_col = np.asarray(R[:, j]).ravel()  # calculé 1 fois pour j
             for k in range(n_rows_H):
-                w_col = np.asarray(current_W[:, k]).ravel()  # ← calculé 1 fois pour (k,j)
+                w_col = np.asarray(current_W[:, k]).ravel()  # 1 fois pour (k, j)
                 dot_rw = np.dot(r_col, w_col)
-                w_norm2 = np.dot(w_col, w_col)
+                w_norm2 = W_norm2[k]
 
                 for delta in (-1, 1):
-
                     new_val = current_H[k, j] + delta
 
                     if new_val < LH or new_val > UH:
@@ -137,6 +141,7 @@ def tabu_search(
                     neighbor_obj = current_obj - 2 * delta * dot_rw + w_norm2
                     neighbor_obj = int(neighbor_obj)
 
+                    # Aspiration
                     if is_tabu and neighbor_obj >= best_obj:
                         continue
 
@@ -212,8 +217,8 @@ if __name__ == "__main__":
     training = os.listdir(TRAINING_PATH)
 
     for i, file in enumerate(test + training):
-        #if "houdain" in file:
-        #    continue
+        # if "houdain" in file:
+        #     continue
 
         print(file)
         path = TEST_PATH if i < len(test) else TRAINING_PATH
@@ -227,10 +232,17 @@ if __name__ == "__main__":
         is_houdain = ("houdain" in file.lower())
 
         obj, W_best, H_best = tabu_search(
-            X, W0, H0, r, LW, UW, LH, UH,
+            X,
+            W0,
+            H0,
+            r,
+            LW,
+            UW,
+            LH,
+            UH,
             max_no_improv=100,
             tabu_tenure=5,
-            debug=is_houdain
+            debug=is_houdain,
         )
 
         # Vérification faisabilité
