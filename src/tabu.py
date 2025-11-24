@@ -103,11 +103,17 @@ def tabu_search(
             replace=False
         )
 
-        best_neighbor_obj = None
-        best_move = None  # ("W" ou "H", i/k, j, delta)
+        # === First improving move + best worsening backup ===
+        improving_move_found = False
+        improving_move = None
+        improving_obj = None
+
+        best_worse_obj = None
+        best_worse_move = None  # ("W" ou "H", i/k, j, delta)
 
         # ==========================================
         # 1) Génération des voisins via W
+        #    (on arrête dès qu'on trouve un move améliorant)
         # ==========================================
         for i in rows_W_to_scan:
             r_row = np.asarray(R[i, :]).ravel()  # calculé 1 fois pour i
@@ -140,53 +146,87 @@ def tabu_search(
                 # Vérif tabou + aspiration
                 is_tabu = tabu_W[i, k] > 0
                 if is_tabu and best_local_obj >= best_obj:
+                    # Mouvement tabou sans aspiration -> interdit
                     continue
 
-                # Mise à jour du meilleur voisin global
-                if (best_neighbor_obj is None) or (best_local_obj < best_neighbor_obj):
-                    best_neighbor_obj = best_local_obj
-                    best_move = ("W", i, k, best_local_delta)
+                # Move admissible
+                if best_local_obj < current_obj:
+                    # === FIRST IMPROVING MOVE ===
+                    improving_move_found = True
+                    improving_move = ("W", i, k, best_local_delta)
+                    improving_obj = best_local_obj
+                    break  # stop boucle k
+                else:
+                    # Move dégradant mais admissible : on garde le meilleur au cas où
+                    if (best_worse_obj is None) or (best_local_obj < best_worse_obj):
+                        best_worse_obj = best_local_obj
+                        best_worse_move = ("W", i, k, best_local_delta)
+
+            if improving_move_found:
+                break  # stop boucle i
 
         # ==========================================
         # 2) Génération des voisins via H
+        #    (seulement si aucun improving trouvé via W)
         # ==========================================
-        for j in cols_H_to_scan:
-            r_col = np.asarray(R[:, j]).ravel()  # calculé 1 fois pour j
-            for k in range(n_rows_H):
-                w_col = np.asarray(current_W[:, k]).ravel()  # 1 fois pour (k, j)
-                dot_rw = np.dot(r_col, w_col)
-                w_norm2 = W_norm2[k]
+        if not improving_move_found:
+            for j in cols_H_to_scan:
+                r_col = np.asarray(R[:, j]).ravel()  # calculé 1 fois pour j
+                for k in range(n_rows_H):
+                    w_col = np.asarray(current_W[:, k]).ravel()  # 1 fois pour (k, j)
+                    dot_rw = np.dot(r_col, w_col)
+                    w_norm2 = W_norm2[k]
 
-                best_local_obj = None
-                best_local_delta = None
+                    best_local_obj = None
+                    best_local_delta = None
 
-                # delta = +1
-                if current_H[k, j] < UH:
-                    obj_plus = current_obj - 2 * (+1) * dot_rw + w_norm2
-                    best_local_obj = obj_plus
-                    best_local_delta = +1
+                    # delta = +1
+                    if current_H[k, j] < UH:
+                        obj_plus = current_obj - 2 * (+1) * dot_rw + w_norm2
+                        best_local_obj = obj_plus
+                        best_local_delta = +1
 
-                # delta = -1
-                if current_H[k, j] > LH:
-                    obj_minus = current_obj - 2 * (-1) * dot_rw + w_norm2
-                    if (best_local_obj is None) or (obj_minus < best_local_obj):
-                        best_local_obj = obj_minus
-                        best_local_delta = -1
+                    # delta = -1
+                    if current_H[k, j] > LH:
+                        obj_minus = current_obj - 2 * (-1) * dot_rw + w_norm2
+                        if (best_local_obj is None) or (obj_minus < best_local_obj):
+                            best_local_obj = obj_minus
+                            best_local_delta = -1
 
-                if best_local_delta is None:
-                    continue
+                    if best_local_delta is None:
+                        continue
 
-                is_tabu = tabu_H[k, j] > 0
-                if is_tabu and best_local_obj >= best_obj:
-                    continue
+                    is_tabu = tabu_H[k, j] > 0
+                    if is_tabu and best_local_obj >= best_obj:
+                        continue
 
-                if (best_neighbor_obj is None) or (best_local_obj < best_neighbor_obj):
-                    best_neighbor_obj = best_local_obj
-                    best_move = ("H", k, j, best_local_delta)
+                    if best_local_obj < current_obj:
+                        # === FIRST IMPROVING MOVE ===
+                        improving_move_found = True
+                        improving_move = ("H", k, j, best_local_delta)
+                        improving_obj = best_local_obj
+                        break  # stop boucle k
+                    else:
+                        if (best_worse_obj is None) or (best_local_obj < best_worse_obj):
+                            best_worse_obj = best_local_obj
+                            best_worse_move = ("H", k, j, best_local_delta)
 
-        # Si aucun mouvement admissible, fin
-        if best_move is None:
-            break
+                if improving_move_found:
+                    break  # stop boucle j
+
+        # ==========================================
+        # Sélection du mouvement à appliquer
+        # ==========================================
+        if improving_move_found:
+            move_type, a, b, delta_move = improving_move
+            new_obj = improving_obj
+        else:
+            # Pas de move améliorant : on prend le "moins pire" si existe
+            if best_worse_move is None:
+                # Aucun mouvement admissible -> on s'arrête
+                break
+            move_type, a, b, delta_move = best_worse_move
+            new_obj = best_worse_obj
 
         # ==========================================
         # Mise à jour des listes tabou (décrément)
@@ -195,10 +235,8 @@ def tabu_search(
         tabu_H = np.where(tabu_H > 0, tabu_H - 1, 0)
 
         # ==========================================
-        # Application du meilleur mouvement trouvé
+        # Application du mouvement choisi
         # ==========================================
-        move_type, a, b, delta_move = best_move
-
         if move_type == "W":
             # Mise à jour de W
             current_W[a, b] += delta_move
@@ -218,7 +256,7 @@ def tabu_search(
             R[:, b] = R[:, b] - delta_move * current_W[:, a]
 
         # La valeur objective correspond au voisin choisi
-        current_obj = best_neighbor_obj
+        current_obj = new_obj
 
         # ==========================================
         # Mise à jour du meilleur global
