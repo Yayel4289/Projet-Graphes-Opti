@@ -90,35 +90,27 @@ def tabu_search(
         # 1) Génération des voisins via W
         # ==========================================
         for i in range(n_rows_W):
+            r_row = np.asarray(R[i, :]).ravel()  # ← calculé 1 fois pour i
             for k in range(r):
+                h_row = np.asarray(current_H[k, :]).ravel()  # ← calculé 1 fois pour (i,k)
+                dot_rh = np.dot(r_row, h_row)
+                h_norm2 = np.dot(h_row, h_row)
+
                 for delta in (-1, 1):
 
                     new_val = current_W[i, k] + delta
 
-                    # Bornes respectées
                     if new_val < LW or new_val > UW:
                         continue
 
-                    # Mouvement tabou ?
                     is_tabu = tabu_W[i, k] > 0
 
-                    # Évaluation locale du voisin :
-                    # On change W[i,k] -> W[i,k] + delta
-                    # Cela modifie uniquement la ligne i de R.
-                    # Formule : f' = f - 2*delta*<R_i., H_k.> + delta^2*||H_k.||^2
-                    r_row = np.asarray(R[i, :]).ravel()
-                    h_row = np.asarray(current_H[k, :]).ravel()
-                    dot_rh = np.dot(r_row, h_row)
-                    h_norm2 = np.dot(h_row, h_row)
-
-                    neighbor_obj = current_obj - 2 * delta * dot_rh + (delta ** 2) * h_norm2
+                    neighbor_obj = current_obj - 2 * delta * dot_rh + h_norm2
                     neighbor_obj = int(neighbor_obj)
 
-                    # Aspiration (on autorise tabou si améliore le global)
                     if is_tabu and neighbor_obj >= best_obj:
                         continue
 
-                    # Sélection du meilleur voisin admissible
                     if (best_neighbor_obj is None) or (neighbor_obj < best_neighbor_obj):
                         best_neighbor_obj = neighbor_obj
                         best_move = ("W", i, k, delta)
@@ -126,36 +118,28 @@ def tabu_search(
         # ==========================================
         # 2) Génération des voisins via H
         # ==========================================
-        for k in range(n_rows_H):          # ligne 0..r-1
-            for j in range(n_cols_H):      # colonne 0..n-1
+        for j in range(n_cols_H):
+            r_col = np.asarray(R[:, j]).ravel()  # ← calculé 1 fois pour j
+            for k in range(n_rows_H):
+                w_col = np.asarray(current_W[:, k]).ravel()  # ← calculé 1 fois pour (k,j)
+                dot_rw = np.dot(r_col, w_col)
+                w_norm2 = np.dot(w_col, w_col)
+
                 for delta in (-1, 1):
 
                     new_val = current_H[k, j] + delta
 
-                    # Bornes respectées
                     if new_val < LH or new_val > UH:
                         continue
 
-                    # Mouvement tabou ?
                     is_tabu = tabu_H[k, j] > 0
 
-                    # Évaluation locale du voisin :
-                    # On change H[k,j] -> H[k,j] + delta
-                    # Cela modifie uniquement la colonne j de R.
-                    # Formule : f' = f - 2*delta*<R_.j, W_.k> + delta^2*||W_.k||^2
-                    r_col = np.asarray(R[:, j]).ravel()
-                    w_col = np.asarray(current_W[:, k]).ravel()
-                    dot_rw = np.dot(r_col, w_col)
-                    w_norm2 = np.dot(w_col, w_col)
-
-                    neighbor_obj = current_obj - 2 * delta * dot_rw + (delta ** 2) * w_norm2
+                    neighbor_obj = current_obj - 2 * delta * dot_rw + w_norm2
                     neighbor_obj = int(neighbor_obj)
 
-                    # Aspiration
                     if is_tabu and neighbor_obj >= best_obj:
                         continue
 
-                    # Sélection du meilleur voisin admissible
                     if (best_neighbor_obj is None) or (neighbor_obj < best_neighbor_obj):
                         best_neighbor_obj = neighbor_obj
                         best_move = ("H", k, j, delta)
