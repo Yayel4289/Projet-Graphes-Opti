@@ -198,8 +198,8 @@ if __name__ == "__main__":
     training = os.listdir(TRAINING_PATH)
 
     for i, file in enumerate(test + training):
-        #if "houdain" in file:
-        #    continue
+        if "houdain" in file:
+            continue
 
         print(file)
         path = TEST_PATH if i < len(test) else TRAINING_PATH
