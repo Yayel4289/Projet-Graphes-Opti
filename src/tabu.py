@@ -2,6 +2,7 @@ import numpy as np
 from utils import *
 import os
 import cProfile, pstats, io
+import time
 
 
 
@@ -15,7 +16,8 @@ def tabu_search(
     LH: int,
     UH: int,
     max_no_improv: int,
-    tabu_tenure: int
+    tabu_tenure: int,
+        debug=False
 ) -> tuple[int, np.matrix, np.matrix]:
     """
     Tabu Search
@@ -56,7 +58,10 @@ def tabu_search(
     # ----- Initialisation de la solution courante -----
     current_W = W.copy()
     current_H = H.copy()
-    current_obj = fobj(X, current_W, current_H)
+
+    # Résidu R = X - W H et valeur objective courante ||R||_F^2
+    R = X - current_W @ current_H
+    current_obj = int(np.linalg.norm(R, 'fro')**2)
 
     # ----- Meilleure solution globale -----
     best_W = current_W.copy()
@@ -75,6 +80,8 @@ def tabu_search(
     #     BOUCLE PRINCIPALE
     # ============================
     while no_improv < max_no_improv:
+        if debug:
+            t0 = time.perf_counter()
 
         best_neighbor_obj = None
         best_move = None  # ("W" ou "H", i/k, j, delta)
@@ -92,16 +99,20 @@ def tabu_search(
                     if new_val < LW or new_val > UW:
                         continue
 
-                    # W modifié temporairement
-                    neighbor_W = current_W.copy()
-                    neighbor_H = current_H        # pas modifié ici
-                    neighbor_W[i, k] = new_val
-
-                    # Coût du voisin
-                    neighbor_obj = fobj(X, neighbor_W, neighbor_H)
-
                     # Mouvement tabou ?
                     is_tabu = tabu_W[i, k] > 0
+
+                    # Évaluation locale du voisin :
+                    # On change W[i,k] -> W[i,k] + delta
+                    # Cela modifie uniquement la ligne i de R.
+                    # Formule : f' = f - 2*delta*<R_i., H_k.> + delta^2*||H_k.||^2
+                    r_row = np.asarray(R[i, :]).ravel()
+                    h_row = np.asarray(current_H[k, :]).ravel()
+                    dot_rh = np.dot(r_row, h_row)
+                    h_norm2 = np.dot(h_row, h_row)
+
+                    neighbor_obj = current_obj - 2 * delta * dot_rh + (delta ** 2) * h_norm2
+                    neighbor_obj = int(neighbor_obj)
 
                     # Aspiration (on autorise tabou si améliore le global)
                     if is_tabu and neighbor_obj >= best_obj:
@@ -125,16 +136,20 @@ def tabu_search(
                     if new_val < LH or new_val > UH:
                         continue
 
-                    # H modifié temporairement
-                    neighbor_W = current_W      # pas modifié ici
-                    neighbor_H = current_H.copy()
-                    neighbor_H[k, j] = new_val
-
-                    # Coût
-                    neighbor_obj = fobj(X, neighbor_W, neighbor_H)
-
                     # Mouvement tabou ?
                     is_tabu = tabu_H[k, j] > 0
+
+                    # Évaluation locale du voisin :
+                    # On change H[k,j] -> H[k,j] + delta
+                    # Cela modifie uniquement la colonne j de R.
+                    # Formule : f' = f - 2*delta*<R_.j, W_.k> + delta^2*||W_.k||^2
+                    r_col = np.asarray(R[:, j]).ravel()
+                    w_col = np.asarray(current_W[:, k]).ravel()
+                    dot_rw = np.dot(r_col, w_col)
+                    w_norm2 = np.dot(w_col, w_col)
+
+                    neighbor_obj = current_obj - 2 * delta * dot_rw + (delta ** 2) * w_norm2
+                    neighbor_obj = int(neighbor_obj)
 
                     # Aspiration
                     if is_tabu and neighbor_obj >= best_obj:
@@ -161,12 +176,24 @@ def tabu_search(
         move_type, a, b, delta_move = best_move
 
         if move_type == "W":
+            # Mise à jour de W
             current_W[a, b] += delta_move
             tabu_W[a, b] = tabu_tenure
+
+            # Mise à jour du résidu R : ligne a modifiée
+            # R[a, :] <- R[a, :] - delta * H[b, :]
+            R[a, :] = R[a, :] - delta_move * current_H[b, :]
+
         else:  # move on H
+            # Mise à jour de H
             current_H[a, b] += delta_move
             tabu_H[a, b] = tabu_tenure
 
+            # Mise à jour du résidu R : colonne b modifiée
+            # R[:, b] <- R[:, b] - delta * W[:, a]
+            R[:, b] = R[:, b] - delta_move * current_W[:, a]
+
+        # La valeur objective correspond au voisin choisi
         current_obj = best_neighbor_obj
 
         # ==========================================
@@ -180,8 +207,11 @@ def tabu_search(
         else:
             no_improv += 1
 
-    return best_obj, best_W, best_H
+        if debug:
+            dt = time.perf_counter() - t0
+            print(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
 
+    return best_obj, best_W, best_H
 
 
 if __name__ == "__main__":
@@ -198,8 +228,8 @@ if __name__ == "__main__":
     training = os.listdir(TRAINING_PATH)
 
     for i, file in enumerate(test + training):
-        if "houdain" in file:
-            continue
+        #if "houdain" in file:
+        #    continue
 
         print(file)
         path = TEST_PATH if i < len(test) else TRAINING_PATH
@@ -210,10 +240,13 @@ if __name__ == "__main__":
         H0 = np.matrix(np.random.randint(LH, UH + 1, size=(r, X.shape[1])))
 
         # Lancement Tabu
+        is_houdain = ("houdain" in file.lower())
+
         obj, W_best, H_best = tabu_search(
             X, W0, H0, r, LW, UW, LH, UH,
             max_no_improv=100,
-            tabu_tenure=5
+            tabu_tenure=5,
+            debug=is_houdain
         )
 
         # Vérification faisabilité
