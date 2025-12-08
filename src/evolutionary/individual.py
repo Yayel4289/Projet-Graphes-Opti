@@ -1,6 +1,6 @@
 from utils import *
 import numpy as np
-from random import random, randint
+from random import choice, random, randint
 from functools import total_ordering
 
 @total_ordering
@@ -72,13 +72,12 @@ class Individual:
         return fobj(self.cls.X, self.W, self.H)
 
     def mutate(self) -> None: 
-        # Neighborhood -> complete enum (can change)
+        # Neighborhood -> +- 1
         in_W = randint(0, 1)
         M = self.W if in_W else self.H
-        LB, HB = (self.cls.LW, self.cls.UW) if in_W else (self.cls.LH, self.cls.UH)
         i = randint(0, M.shape[0] - 1)
         j = randint(0, M.shape[1] - 1)
-        M[i, j] = randint(LB, HB)
+        M[i, j] += choice((-1, 1))
 
     def possible_mutate(self):
         if random() < self.cls.BETA : self.mutate()
@@ -95,4 +94,11 @@ class Individual:
             j = randint(0, M.shape[1] - 1)
             M[i, j] = other_M[i, j]
         return Individual(new_W, new_H)
+
+    def uniform_crossover(self, other: "Individual") -> "Individual":
+        W_mask = np.random.random(self.W.shape) < 1/2
+        H_mask = np.random.random(self.H.shape) < 1/2
+        child_W = np.matrix(np.where(W_mask, self.W, other.W))
+        child_H = np.matrix(np.where(H_mask, self.H, other.H))
+        return Individual(child_W, child_H)
 
