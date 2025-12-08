@@ -1,6 +1,7 @@
 from typing import Iterator
 import numpy as np
 import time
+from tqdm import tqdm
 from random import sample, random, choice
 from .individual import Individual
 
@@ -103,12 +104,12 @@ class Population:
 
         if self.min < old:
             self.still_count = 0
-            print(self.min.cost)
+            tqdm.write(f"{self.min.cost}")
         else:
             self.still_count += 1
 
         if self.still_count >= self.STILL_COUNT_MAX:
-            print("Diversification")
+            tqdm.write("----Diversification then Intensification----")
             self.still_count = -self.WAIT_DIVERSIFICATION * self.STILL_COUNT_MAX
             self.diversify()
             self.intensify()
@@ -121,7 +122,12 @@ class Population:
 
     def evolve(self):
         start = time.time()
-        while time.time() - start < self.TIME_SEC:
+        pbar = tqdm(total=100, position=0, leave=True)
+        timer = 0
+        while timer < self.TIME_SEC:
+            timer = time.time() - start
+            pbar.n = int(timer / self.TIME_SEC * 100)
+            pbar.refresh()
             self.generate()
 
 
