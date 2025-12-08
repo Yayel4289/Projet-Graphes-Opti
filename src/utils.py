@@ -63,8 +63,8 @@ def least_square_optimization(X: np.matrix, r: int, LW: int, UW: int, LH: int, U
         W = X @ np.linalg.pinv(H)
         W = np.clip(W, LW, UW)
 
-    W = np.matrix(np.round(W))
-    H = np.matrix(np.round(H))
+    W = np.matrix(np.round(W), dtype=int)
+    H = np.matrix(np.round(H), dtype=int)
     return W, H
 
 def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:

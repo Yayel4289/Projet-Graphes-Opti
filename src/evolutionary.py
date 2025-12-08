@@ -7,9 +7,9 @@ import os
 if __name__ == "__main__":
     # hyperparams
     TIME_SEC = 280 # time in sec for each file
-    N_POPULATION = 100
+    N_POPULATION = 20
     ALPHA = 0.75 # reproduction chance
-    BETA = 0.25 # mutation chance
+    BETA = 0.1 # mutation chance
 
     # paths
     TEST_PATH = "../tests/testMatrices/"

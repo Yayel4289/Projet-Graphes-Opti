@@ -87,7 +87,7 @@ class Population:
         n = len(self)
         for individual in self[:n]:
             if random() < self.ALPHA:
-                self.add(individual.reproduce(choice(self.population)))
+                self.add(individual.uniform_crossover(choice(self.population)))
 
     def make_mutation(self) -> None:
         for individual in self: individual.possible_mutate()
