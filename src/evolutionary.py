@@ -6,8 +6,8 @@ import os
 
 if __name__ == "__main__":
     # hyperparams
-    TIME_SEC = 60 # time in sec for each file
-    N_POPULATION = 500
+    TIME_SEC = 280 # time in sec for each file
+    N_POPULATION = 100
     ALPHA = 0.75 # reproduction chance
     BETA = 0.25 # mutation chance
 
@@ -27,17 +27,19 @@ if __name__ == "__main__":
 
         K_OBJ = -1
         X, r, LW, UW, LH, UH = parse_input(path + file)
-        print(X.shape, r)
-        W = np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r)))
-        H = np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))
+        
+        W_START, H_START = least_square_optimization(X, r, LW, UW, LH, UH)
+        print(fobj(X, W_START, H_START))
+
         if "houdain" in file:
-            K_OBJ = 75
+            K_OBJ = -1
         population = Population(
-           X, r, LW, UW, LH, UH,
-           N_POPULATION, TIME_SEC, ALPHA, BETA, K_OBJ
+            X, r, LW, UW, LH, UH,
+            W_START, H_START,
+            N_POPULATION, TIME_SEC, ALPHA, BETA, K_OBJ
         )
+
         population.evolve()
 
         best = population.min
         generate_output(best.cost, best.W, best.H, RESULT_PATH + file)
-
