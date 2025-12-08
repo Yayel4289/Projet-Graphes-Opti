@@ -3,6 +3,7 @@ from utils import *
 import os
 import cProfile, pstats, io
 import time
+from tqdm import tqdm
 
 
 def tabu_search(
@@ -14,9 +15,8 @@ def tabu_search(
     UW: int,
     LH: int,
     UH: int,
-    max_no_improv: int,
+    MAX_TIME: int,
     tabu_tenure: int,
-    debug: bool = False
 ) -> tuple[int, np.matrix, np.matrix]:
     """
     Tabu Search
@@ -39,7 +39,7 @@ def tabu_search(
         Minimum possible integer for H
     UH : int
         Maximum possible integer for H
-    max_no_improv : int
+    MAX_TIME : int
         Maximum iterations without improving the global best
     tabu_tenure : int
         Number of iterations during which a move is forbidden
@@ -78,9 +78,16 @@ def tabu_search(
     # ============================
     #     BOUCLE PRINCIPALE
     # ============================
-    while no_improv < max_no_improv:
-        if debug:
-            t0 = time.perf_counter()
+
+    start = time.time()
+    pbar = tqdm(total=100, position=0, leave=True)
+    timer = 0
+    while timer < MAX_TIME:
+        timer = time.time() - start
+        pbar.n = int(timer / MAX_TIME * 100)
+        pbar.refresh()
+
+        t0 = time.perf_counter()
 
         # --- Pré-calcul des normes L2 des lignes de H et colonnes de W ---
         # H_norm2[k] = || H[k, :] ||^2
@@ -269,9 +276,8 @@ def tabu_search(
         else:
             no_improv += 1
 
-        if debug:
-            dt = time.perf_counter() - t0
-            print(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
+        dt = time.perf_counter() - t0
+        tqdm.write(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
 
     return best_obj, best_W, best_H
 
@@ -312,9 +318,8 @@ if __name__ == "__main__":
             UW,
             LH,
             UH,
-            max_no_improv=1000,
+            MAX_TIME=300,
             tabu_tenure=5,
-            debug=is_houdain,
         )
 
         # Vérification faisabilité
@@ -325,9 +330,11 @@ if __name__ == "__main__":
 
         generate_output(obj, W_best, H_best, RESULT_PATH + file)
 
+        """
         profiler.disable()
         s = io.StringIO()
         ps = pstats.Stats(profiler, stream=s).sort_stats("cumtime")
         ps.print_stats(30)
+        """
 
         print(s.getvalue())
