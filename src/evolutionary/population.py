@@ -14,6 +14,8 @@ class Population:
         UW: int,
         LH: int,
         UH: int,
+        W_START: np.matrix, 
+        H_START: np.matrix,
         N_POPULATION: int,
         TIME_SEC: int,
         ALPHA: float,
@@ -27,19 +29,23 @@ class Population:
         self.UW = UW 
         self.LH = LH 
         self.UH = UH
+        self.W_START = W_START
+        self.H_START = H_START
         self.N_POPULATION = N_POPULATION
         self.TIME_SEC = TIME_SEC
         self.ALPHA = ALPHA
         self.K_TOURNAMENT_SELECT = 3
         Individual.init_class(X, r, LW, UW, LH, UH, BETA, K_OBJ)
+        min_start = Individual(self.W_START, self.H_START)
         self.population: list["Individual"] = [
             self.randIndividual() 
-            for _ in range(self.N_POPULATION)
+            for _ in range(self.N_POPULATION - 1)
         ]
+        self.population.append(min_start)
+        self.min = min_start.copy()
         self.still_count = 0
         self.STILL_COUNT_MAX = 100 # to trigger diversification
         self.WAIT_DIVERSIFICATION = 10
-        self.min = choice(self.population).copy() # random min start
 
     def __getitem__(self, key):
         return self.population.__getitem__(key)
@@ -51,10 +57,21 @@ class Population:
         return self.population.__len__()
 
     def randIndividual(self) -> "Individual":
+        modif_W = np.vectorize(
+            lambda w: bound(self.LW, w + (random() < 0.001) * np.random.randint(-3, 3), self.UW)
+        )
+        modif_H = np.vectorize(
+            lambda h: bound(self.LH, h + (random() < 0.001) * np.random.randint(-3, 3), self.UH)
+        )
+        W = modif_W(self.W_START)
+        H = modif_H(self.H_START)
+        return Individual(W, H)
+        """
         return Individual(
             np.matrix(np.random.randint(self.LW, self.UW, size=(self.X.shape[0], self.r))), # W
             np.matrix(np.random.randint(self.LH, self.UH, size=(self.r, self.X.shape[1])))  # H
         )
+        """
 
     def add(self, ind: "Individual") -> None:
         self.population.append(ind)
@@ -101,6 +118,7 @@ class Population:
     def update_min(self) -> None:
         old = self.min
         self.min = min(old, min(self.population).copy())
+        #tqdm.write(f"Candidate :{min(self.population).compute_real_cost()}")
 
         if self.min < old:
             self.still_count = 0
@@ -130,4 +148,6 @@ class Population:
             pbar.refresh()
             self.generate()
 
+def bound(minimum: int, x: int, maximum: int):
+    return min(maximum, max(minimum, x))
 
