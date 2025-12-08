@@ -16,21 +16,29 @@ class Population:
         N_POPULATION: int,
         TIME_SEC: int,
         ALPHA: float,
-        BETA: float
+        BETA: float,
+        K_OBJ: int
     ) -> None:
 
+        self.X = X
+        self.r = r 
+        self.LW = LW 
+        self.UW = UW 
+        self.LH = LH 
+        self.UH = UH
         self.N_POPULATION = N_POPULATION
         self.TIME_SEC = TIME_SEC
         self.ALPHA = ALPHA
         self.K_TOURNAMENT_SELECT = 3
-        Individual.init_class(X, r, LW, UW, LH, UH, BETA)
+        Individual.init_class(X, r, LW, UW, LH, UH, BETA, K_OBJ)
         self.population: list["Individual"] = [
-            Individual(
-                np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r))), # W
-                np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))  # H
-            ) for _ in range(self.N_POPULATION)
+            self.randIndividual() 
+            for _ in range(self.N_POPULATION)
         ]
-        self.min = choice(self.population) # random min start
+        self.still_count = 0
+        self.STILL_COUNT_MAX = 100 # to trigger diversification
+        self.WAIT_DIVERSIFICATION = 10
+        self.min = choice(self.population).copy() # random min start
 
     def __getitem__(self, key):
         return self.population.__getitem__(key)
@@ -40,6 +48,12 @@ class Population:
         
     def __len__(self) -> int:
         return self.population.__len__()
+
+    def randIndividual(self) -> "Individual":
+        return Individual(
+            np.matrix(np.random.randint(self.LW, self.UW, size=(self.X.shape[0], self.r))), # W
+            np.matrix(np.random.randint(self.LH, self.UH, size=(self.r, self.X.shape[1])))  # H
+        )
 
     def add(self, ind: "Individual") -> None:
         self.population.append(ind)
@@ -58,9 +72,7 @@ class Population:
                 self.add(individual.reproduce(choice(self.population)))
 
     def make_mutation(self) -> None:
-        for individual in self:
-            if individual is not self.min: # avoid mutating our min
-                individual.possible_mutate()
+        for individual in self: individual.possible_mutate()
 
     def select(self) -> None: 
         # naive selection
@@ -76,9 +88,32 @@ class Population:
             for i in sorted(i_group, reverse=True): 
                 self.pop(i)
 
+    def diversify(self) -> None:
+        self.sort()
+        self.population = self.population[self.N_POPULATION // 10:] # 10% elitism
+        while len(self) < self.N_POPULATION:
+            self.add(self.randIndividual())
+
+        self.ALPHA -= 0.06
+
+    def intensify(self) -> None:
+        self.ALPHA += 0.1
+
     def update_min(self) -> None:
-        self.min = min(self.population)
-        print(self.min.cost)
+        old = self.min
+        self.min = min(old, min(self.population).copy())
+
+        if self.min < old:
+            self.still_count = 0
+            print(self.min.cost)
+        else:
+            self.still_count += 1
+
+        if self.still_count >= self.STILL_COUNT_MAX:
+            print("Diversification")
+            self.still_count = -self.WAIT_DIVERSIFICATION * self.STILL_COUNT_MAX
+            self.diversify()
+            self.intensify()
             
     def generate(self):
         self.make_reproduction()

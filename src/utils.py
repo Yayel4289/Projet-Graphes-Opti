@@ -1,4 +1,5 @@
 import numpy as np
+from random import randrange
 import re 
 from math import ceil
 
@@ -22,6 +23,31 @@ def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
 
     f = np.linalg.norm(X-W@H,'fro')**2 # ou alors, sans NumPy : f = sum(sum((X-W@H)**2))
     return ceil(f)
+
+def point_fobj(X: np.matrix, W: np.matrix, H: np.matrix, i: int, j: int) -> int:
+    true_point = X[i, j]
+    r = W.shape[1]
+    approx_point = 0
+    for ind in range(r):
+        approx_point += W[i, ind] * H[ind, j]
+    return (true_point - approx_point)**2
+
+def partial_fobj(X: np.matrix, W: np.matrix, H: np.matrix, k: int) -> int:
+    # Compute AT MOST k points
+    res = 0
+    rows, cols = X.shape 
+    # Choose k <<< rows * cols
+    computed_set = set()
+    for _ in range(k):
+        i = randrange(rows)
+        j = randrange(cols)
+        if (i, j) in computed_set:
+            continue
+        
+        res += point_fobj(X, W, H, i, j)
+        computed_set.add((i, j))
+
+    return res
 
 
 def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
