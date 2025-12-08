@@ -75,6 +75,10 @@ def tabu_search(
     n_rows_W, _ = current_W.shape
     n_rows_H, n_cols_H = current_H.shape  # H est r x n
 
+    # --- Voisinage restreint : on ne parcourt qu'un sous-ensemble de lignes/colonnes ---
+    MAX_ROWS_W = 10
+    MAX_COLS_H = 100
+
     # ============================
     #     BOUCLE PRINCIPALE
     # ============================
@@ -94,10 +98,6 @@ def tabu_search(
         # W_norm2[k] = || W[:, k] ||^2
         H_norm2 = np.sum(np.asarray(current_H) ** 2, axis=1)  # shape (r,)
         W_norm2 = np.sum(np.asarray(current_W) ** 2, axis=0)  # shape (r,)
-
-        # --- Voisinage restreint : on ne parcourt qu'un sous-ensemble de lignes/colonnes ---
-        MAX_ROWS_W = 100   # à ajuster si tu veux
-        MAX_COLS_H = 100
 
         rows_W_to_scan = np.random.choice(
             n_rows_W,
