@@ -290,16 +290,15 @@ if __name__ == "__main__":
     training = os.listdir(TRAINING_PATH)
 
     for i, file in enumerate(test + training):
-        # if "houdain" in file:
-        #     continue
+        if "houdain" not in file:
+            continue
 
         print(file)
         path = TEST_PATH if i < len(test) else TRAINING_PATH
         X, r, LW, UW, LH, UH = parse_input(path + file)
 
         # Initialisation aléatoire
-        W0 = np.matrix(np.random.randint(LW, UW + 1, size=(X.shape[0], r)))
-        H0 = np.matrix(np.random.randint(LH, UH + 1, size=(r, X.shape[1])))
+        W0, H0 = least_square_optimization(X, r, LW, UW, LH, UH)
 
         # Lancement Tabu
         is_houdain = ("houdain" in file.lower())
@@ -313,7 +312,7 @@ if __name__ == "__main__":
             UW,
             LH,
             UH,
-            max_no_improv=100,
+            max_no_improv=1000,
             tabu_tenure=5,
             debug=is_houdain,
         )
