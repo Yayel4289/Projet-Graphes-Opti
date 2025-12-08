@@ -94,10 +94,8 @@ class Population:
         while len(self) < self.N_POPULATION:
             self.add(self.randIndividual())
 
-        self.ALPHA -= 0.06
-
     def intensify(self) -> None:
-        self.ALPHA += 0.1
+        self.ALPHA += 0.05
 
     def update_min(self) -> None:
         old = self.min

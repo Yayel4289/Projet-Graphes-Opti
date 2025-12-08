@@ -8,8 +8,8 @@ if __name__ == "__main__":
     # hyperparams
     TIME_SEC = 60 # time in sec for each file
     N_POPULATION = 500
-    ALPHA = 0.7 # reproduction chance
-    BETA = 0.2 # mutation chance
+    ALPHA = 0.75 # reproduction chance
+    BETA = 0.25 # mutation chance
 
     # paths
     TEST_PATH = "../tests/testMatrices/"
@@ -31,7 +31,7 @@ if __name__ == "__main__":
         W = np.matrix(np.random.randint(LW, UW, size=(X.shape[0], r)))
         H = np.matrix(np.random.randint(LH, UH, size=(r, X.shape[1])))
         if "houdain" in file:
-            K_OBJ = 100
+            K_OBJ = 75
         population = Population(
            X, r, LW, UW, LH, UH,
            N_POPULATION, TIME_SEC, ALPHA, BETA, K_OBJ
@@ -39,5 +39,5 @@ if __name__ == "__main__":
         population.evolve()
 
         best = population.min
-        generate_output(best.compute_real_cost(), best.W, best.H, RESULT_PATH + file)
+        generate_output(best.cost, best.W, best.H, RESULT_PATH + file)
 
