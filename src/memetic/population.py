@@ -1,7 +1,8 @@
 from typing import Iterator
 import numpy as np
 import time
-from tqdm import tqdm
+from tqdm.auto import tqdm
+import sys
 from random import sample, random, choice
 from .individual import Individual
 
@@ -20,7 +21,7 @@ class Population:
         TIME_SEC: int,
         ALPHA: float,
         BETA: float,
-        K_OBJ: int
+        K_OBJ: int=-1
     ) -> None:
 
         self.X = X
@@ -140,13 +141,15 @@ class Population:
 
     def evolve(self):
         start = time.time()
-        pbar = tqdm(total=100, position=0, leave=True)
+        pbar = tqdm(total=100, position=1, leave=False, desc="Total Progression")
         timer = 0
         while timer < self.TIME_SEC:
             timer = time.time() - start
             pbar.n = int(timer / self.TIME_SEC * 100)
             pbar.refresh()
             self.generate()
+
+        pbar.close()
 
 def bound(minimum: int, x: int, maximum: int):
     return min(maximum, max(minimum, x))

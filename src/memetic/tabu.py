@@ -1,9 +1,8 @@
+from .utils import *
 import numpy as np
-from utils import *
 import os
-import cProfile, pstats, io
 import time
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def tabu_search(
@@ -15,8 +14,9 @@ def tabu_search(
     UW: int,
     LH: int,
     UH: int,
-    MAX_TIME: int,
+    MAX_TIME: float,
     tabu_tenure: int,
+    debug=False
 ) -> tuple[int, np.matrix, np.matrix]:
     """
     Tabu Search
@@ -39,8 +39,8 @@ def tabu_search(
         Minimum possible integer for H
     UH : int
         Maximum possible integer for H
-    MAX_TIME : int
-        Maximum iterations without improving the global best
+    MAX_TIME : float
+        Time of execution
     tabu_tenure : int
         Number of iterations during which a move is forbidden
 
@@ -84,7 +84,7 @@ def tabu_search(
     # ============================
 
     start = time.time()
-    pbar = tqdm(total=100, position=0, leave=True)
+    pbar = tqdm(total=100, position=0, leave=False, desc="Taboo")
     timer = 0
     while timer < MAX_TIME:
         timer = time.time() - start
@@ -277,14 +277,14 @@ def tabu_search(
             no_improv += 1
 
         dt = time.perf_counter() - t0
-        tqdm.write(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
+        if debug:
+            tqdm.write(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
 
+    pbar.close()
     return best_obj, best_W, best_H
 
 
 if __name__ == "__main__":
-    profiler = cProfile.Profile()
-    profiler.enable()
 
     TEST_PATH = "../tests/testMatrices/"
     TRAINING_PATH = "../tests/trainingMatrices/"
@@ -304,6 +304,7 @@ if __name__ == "__main__":
         X, r, LW, UW, LH, UH = parse_input(path + file)
 
         W0, H0 = least_square_optimization(X, r, LW, UW, LH, UH)
+        print(fobj(X, W0, H0))
 
         # Lancement Tabu
         obj, W_best, H_best = tabu_search(
@@ -317,6 +318,7 @@ if __name__ == "__main__":
             UH,
             MAX_TIME=300,
             tabu_tenure=5,
+            debug=True
         )
 
         # Vérification faisabilité
@@ -326,12 +328,4 @@ if __name__ == "__main__":
             print("⚠️ ERREUR : solution NON faisable")
 
         generate_output(obj, W_best, H_best, RESULT_PATH + file)
-
-        """
-        profiler.disable()
-        s = io.StringIO()
-        ps = pstats.Stats(profiler, stream=s).sort_stats("cumtime")
-        ps.print_stats(30)
-        """
-
-        #print(s.getvalue())
+        
