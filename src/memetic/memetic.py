@@ -8,7 +8,7 @@ N_POPULATION = 10
 ALPHA = 0.75 # reproduction chance
 BETA = 0.1 # mutation chance
 
-RESULT_PATH = "../tests/memeticResults/"
+RESULT_PATH = os.path.join("..", "tests", "memeticResults")
 
 def memetic(path: str, generate=False):
     X, r, LW, UW, LH, UH = parse_input(path)
@@ -27,8 +27,14 @@ def memetic(path: str, generate=False):
     best = population.min
 
     if generate:
-        filename = path.split("/")[-1]
-        generate_output(best.cost, best.W, best.H, RESULT_PATH + filename)
+        # On récupère seulement le nom du fichier, pas tout le chemin
+        filename = os.path.basename(path)
+
+        # On construit un chemin OS-indépendant
+        output_path = os.path.join(RESULT_PATH, filename)
+
+        # Génère le fichier de sortie proprement
+        generate_output(best.cost, best.W, best.H, output_path)
 
     return best.cost, best.W, best.H
 

@@ -2,7 +2,20 @@ import numpy as np
 from random import randrange
 import re 
 from math import ceil
+import os
 
+def generate_output(obj: int, W: np.matrix, H: np.matrix, path: str):
+    """
+    Generate the output file (cross-platform, auto-create folder)
+    """
+    # Création automatique du dossier
+    folder = os.path.dirname(path)
+    os.makedirs(folder, exist_ok=True)
+
+    s = f"{obj}\n{get_matrix_str_output(W)}\n{get_matrix_str_output(H)}"
+
+    with open(path, "w") as file:
+        file.write(s)
 
 def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     """
