@@ -1,7 +1,8 @@
-from utils import *
+from .utils import *
 import numpy as np
 from random import choice, random, randint
 from functools import total_ordering
+from .tabu import tabu_search
 
 @total_ordering
 class Individual:
@@ -43,13 +44,25 @@ class Individual:
 
     def __init__(self, W: np.matrix, H: np.matrix, cost: int=-1) -> None:
         self.cls = self.__class__
-        self.W = W 
-        self.H = H 
+        self.W = W
+        self.H = H
 
         # cost != -1 => copy
         if cost == -1:
             self.possible_mutate()
-            self.cost = self.compute_cost()
+            self.cost, self.W, self.H = tabu_search(
+                self.cls.X,
+                self.W,
+                self.H,
+                self.cls.r,
+                self.cls.LW,
+                self.cls.UW,
+                self.cls.LH,
+                self.cls.UH,
+                MAX_TIME=1,
+                tabu_tenure=5,
+                debug=False
+            )
         else:
             self.cost = cost
 

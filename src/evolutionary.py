@@ -1,13 +1,12 @@
-import numpy as np 
 from evolutionary.population import Population
-from utils import *
+from evolutionary.utils import *
 import os
 
 
 if __name__ == "__main__":
     # hyperparams
-    TIME_SEC = 280 # time in sec for each file
-    N_POPULATION = 20
+    TIME_SEC = 270 # time in sec for each file
+    N_POPULATION = 8
     ALPHA = 0.75 # reproduction chance
     BETA = 0.1 # mutation chance
 
