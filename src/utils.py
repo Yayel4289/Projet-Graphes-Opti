@@ -24,6 +24,24 @@ def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     return ceil(f)
 
 
+def least_square_optimization(X: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int, n_iter=100):
+    m, n = X.shape
+    W = np.random.randn(m, r)
+    H = np.random.randn(r, n)
+
+    for _ in range(n_iter):
+        # Update H via least squares
+        H = np.linalg.lstsq(W, X, rcond=None)[0]
+        H = np.clip(H, LH, UH)
+
+        # Update W via least squares
+        W = X @ np.linalg.pinv(H)
+        W = np.clip(W, LW, UW)
+
+    W = np.matrix(np.round(W), dtype=int)
+    H = np.matrix(np.round(H), dtype=int)
+    return W, H
+
 def is_solution_feasible(W: np.matrix, H: np.matrix, r: int, LW: int, UW: int, LH: int, UH: int) -> bool:
     """
     Test whether the given solution is feasible or not
