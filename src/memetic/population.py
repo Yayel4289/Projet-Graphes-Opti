@@ -20,7 +20,7 @@ class Population:
         TIME_SEC: int,
         ALPHA: float,
         BETA: float,
-        K_OBJ: int
+        K_OBJ: int=-1
     ) -> None:
 
         self.X = X

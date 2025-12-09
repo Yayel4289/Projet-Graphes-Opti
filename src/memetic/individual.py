@@ -28,7 +28,7 @@ class Individual:
         LH: int,
         UH: int,
         BETA: float,
-        K_OBJ: int
+        K_OBJ: int=-1
     ) -> None:
         cls.X = X 
         cls.r = r 
