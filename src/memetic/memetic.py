@@ -10,7 +10,7 @@ BETA = 0.1 # mutation chance
 
 RESULT_PATH = "../tests/memeticResults/"
 
-def memetic(path: str):
+def memetic(path: str, generate=False):
     X, r, LW, UW, LH, UH = parse_input(path)
     
     W_START, H_START = least_square_optimization(X, r, LW, UW, LH, UH)
@@ -25,6 +25,11 @@ def memetic(path: str):
     population.evolve()
 
     best = population.min
+
+    if generate:
+        filename = path.split("/")[-1]
+        generate_output(best.cost, best.W, best.H, RESULT_PATH + filename)
+
     return best.cost, best.W, best.H
 
 
@@ -32,7 +37,6 @@ if __name__ == "__main__":
     # paths
     TEST_PATH = "../tests/testMatrices/"
     TRAINING_PATH = "../tests/trainingMatrices/"
-    RESULT_PATH = "../tests/evolutionaryResults/"
 
     test = os.listdir(TEST_PATH)
     training = os.listdir(TRAINING_PATH)
@@ -43,6 +47,5 @@ if __name__ == "__main__":
         print(file)
         path = TEST_PATH if i < len(test) else TRAINING_PATH
         
-        cost, W, H = memetic(path + file)
-
-        generate_output(cost, W, H, RESULT_PATH + file)
+        cost, W, H = memetic(path + file, True)
+        print(cost)
