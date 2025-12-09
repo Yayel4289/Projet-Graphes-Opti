@@ -1,9 +1,8 @@
 from .utils import *
 import numpy as np
 import os
-import cProfile, pstats, io
 import time
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def tabu_search(
@@ -85,7 +84,7 @@ def tabu_search(
     # ============================
 
     start = time.time()
-    pbar = tqdm(total=100, position=0, leave=True)
+    pbar = tqdm(total=100, position=0, leave=False, desc="Taboo")
     timer = 0
     while timer < MAX_TIME:
         timer = time.time() - start
@@ -281,12 +280,11 @@ def tabu_search(
         if debug:
             tqdm.write(f"[HOUDAIN] iter={no_improv}   time={dt:.4f}s   obj={current_obj}")
 
+    pbar.close()
     return best_obj, best_W, best_H
 
 
 if __name__ == "__main__":
-    profiler = cProfile.Profile()
-    profiler.enable()
 
     TEST_PATH = "../tests/testMatrices/"
     TRAINING_PATH = "../tests/trainingMatrices/"
@@ -330,12 +328,4 @@ if __name__ == "__main__":
             print("⚠️ ERREUR : solution NON faisable")
 
         generate_output(obj, W_best, H_best, RESULT_PATH + file)
-
-        """
-        profiler.disable()
-        s = io.StringIO()
-        ps = pstats.Stats(profiler, stream=s).sort_stats("cumtime")
-        ps.print_stats(30)
-        """
-
-        #print(s.getvalue())
+        
