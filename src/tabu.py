@@ -303,12 +303,9 @@ if __name__ == "__main__":
         path = TEST_PATH if i < len(test) else TRAINING_PATH
         X, r, LW, UW, LH, UH = parse_input(path + file)
 
-        # Initialisation aléatoire
         W0, H0 = least_square_optimization(X, r, LW, UW, LH, UH)
 
         # Lancement Tabu
-        is_houdain = ("houdain" in file.lower())
-
         obj, W_best, H_best = tabu_search(
             X,
             W0,
@@ -337,4 +334,4 @@ if __name__ == "__main__":
         ps.print_stats(30)
         """
 
-        print(s.getvalue())
+        #print(s.getvalue())
