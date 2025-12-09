@@ -1,5 +1,6 @@
 from memetic.memetic import memetic
 from memetic.utils import *
+from tqdm.auto import tqdm
 import sys
 
 if __name__ == "__main__":
@@ -11,5 +12,5 @@ if __name__ == "__main__":
     path = args[1]
     
     cost, W, H = memetic(path, generate=True)
-    print(cost)
+    tqdm.write(f" Final : {cost}")
 
