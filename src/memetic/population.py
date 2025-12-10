@@ -2,7 +2,6 @@ from typing import Iterator
 import numpy as np
 import time
 from tqdm.auto import tqdm
-import sys
 from random import sample, random, choice
 from .individual import Individual
 
