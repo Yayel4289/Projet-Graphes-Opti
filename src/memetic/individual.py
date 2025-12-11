@@ -88,9 +88,15 @@ class Individual:
         # Neighborhood -> +- 1
         in_W = randint(0, 1)
         M = self.W if in_W else self.H
+        LB, UB = (self.cls.LW, self.cls.UW) if in_W else (self.cls.LH, self.cls.UH)
         i = randint(0, M.shape[0] - 1)
         j = randint(0, M.shape[1] - 1)
-        M[i, j] += choice((-1, 1))
+        if M[i, j] == LB:
+            M[i, j] += 1
+        elif M[i, j] == UB:
+            M[i, j] -= 1
+        else:
+            M[i, j] += choice((-1, 1))
 
     def possible_mutate(self):
         if random() < self.cls.BETA : self.mutate()
