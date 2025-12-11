@@ -3,19 +3,42 @@ from random import randrange
 import re 
 from math import ceil
 import os
+from PIL import Image
+import numpy as np
+
 
 def generate_output(obj: int, W: np.matrix, H: np.matrix, path: str):
     """
-    Generate the output file (cross-platform, auto-create folder)
+    Generate the output file AND an image of the reconstructed matrix.
     """
-    # Création automatique du dossier
+    # Create folder cross-platform
     folder = os.path.dirname(path)
     os.makedirs(folder, exist_ok=True)
 
+    # --- Write text output as before ---
     s = f"{obj}\n{get_matrix_str_output(W)}\n{get_matrix_str_output(H)}"
-
     with open(path, "w") as file:
         file.write(s)
+
+    # --- Build the PNG image from W @ H ---
+    X_reconstructed = W @ H
+    X_np = np.asarray(X_reconstructed, dtype=np.float32)
+
+    # Normalize to 0-255 for an image
+    X_np -= X_np.min()
+    if X_np.max() > 0:
+        X_np = X_np / X_np.max()
+    X_np = (X_np * 255).astype(np.uint8)
+
+    # Create PIL image
+    img = Image.fromarray(X_np, mode='L')
+
+    # Save PNG next to txt
+    png_path = path + ".png"
+    img.save(png_path)
+
+    print(f"Image saved to: {png_path}")
+
 
 def fobj(X: np.matrix, W: np.matrix, H: np.matrix) -> int:
     """
@@ -191,25 +214,7 @@ def get_matrix_str_output(M: np.matrix) -> str:
     return re.sub(r" \[|\[|\]", '', str(M))
 
 
-def generate_output(obj: int, W: np.matrix, H: np.matrix, path: str):
-    """
-    Generate the ouptut file
 
-    Parameters
-    ----------
-    obj: int
-        The found solution's value
-    W : np.matrix 
-        The W matrix solution
-    H : np.matrix 
-        The H matrix solution
-    path: str
-        The location to generate the output file
-    """
-
-    s = f"{obj}\n{get_matrix_str_output(W)}\n{get_matrix_str_output(H)}"
-    with open(path, "w") as file:
-        file.write(s)
     
 
 """
